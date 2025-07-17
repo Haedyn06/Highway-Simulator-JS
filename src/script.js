@@ -50,6 +50,9 @@ const accelerationCurve = [
     {speed: 300, time: 20.5}
 ];
 
+let lastTime = performance.now();
+let distance = 0;
+
 
 //Controls
 let keys = {};
@@ -89,17 +92,21 @@ window.onload = function() {
         if (e.code === "Space" || e.code === "KeyA" || e.code === "KeyD" || e.code === "KeyS") carImg.src = "../assets/sprites/CarBase.png";
     });
     
-    requestAnimationFrame(update);
+    requestAnimationFrame((time) => update(time));
+
 }
 
 
 
-function update() {
+function update(currentTime) {
     requestAnimationFrame(update);
     if (gameOver) {
         return;
     }
     
+    let deltaTime = (currentTime - lastTime) / 1000; // seconds
+    lastTime = currentTime;
+
     contents.clearRect(0, 0, mainFrame.width, mainFrame.height);
     MoveCar();
     for (let i = 0; i < laneArray.length; i++) {
@@ -113,10 +120,12 @@ function update() {
     
     //Speed
     let speed = velocityY*3.3;
+    distance += (speed * deltaTime) / 3600;
     contents.fillStyle = "white";
     contents.font = "45px sans-serif";
     contents.fillText((speed.toFixed(1) + " km/h"), 50, 50);
-
+    contents.fillText((distance.toFixed(2) + " km"), 50, 100);
+    
     distanceSinceLastSpawn += velocityY;
 
     if (distanceSinceLastSpawn >= roadSpacing) {
@@ -182,16 +191,25 @@ function LoadRoad() {
 }
 
 function MoveCar() {
-    if (keys["KeyW"]) { // 90 Velocity = 90*3.34 = 300km/h
-        if (velocityY < 30.3) velocityY += 0.26
-        else if (velocityY < 60.6) velocityY += 0.12
-        else if (velocityY < 75.75) velocityY += 0.07
-        else if (velocityY < 91) velocityY += 0.04
-    } 
+    if (keys["KeyW"]) {
+        if (velocityY < 30.3) velocityY += 0.26;
+        else if (velocityY < 60.6) velocityY += 0.12;
+        else if (velocityY < 75.75) velocityY += 0.07;
+        else if (velocityY < 91) velocityY += 0.04;
+    } else {
+        if (velocityY > 60.6) velocityY -= 0.04;
+        else if (velocityY > 30.3) velocityY -= 0.07;
+        else if (velocityY > 12) velocityY -= 0.12;
+        else if (velocityY > 0) velocityY -= 0.26;
+
+        if (velocityY < 0) velocityY = 0;
+    }
 
     if (keys["KeyA"] && car.x >= 170) {
         carImg.src = "../assets/sprites/CarLeft.png";
         car.x -= carVelocityX;
+        velocityY += 0.07;
+        if (velocityY < 5) velocityY += 8.5;
     }
 
     if (keys["KeyS"] || keys["Space"]) {
@@ -203,6 +221,7 @@ function MoveCar() {
     if (keys["KeyD"] && car.x <= (laneX + laneWidth + 50)) {
         carImg.src = "../assets/sprites/CarRight.png";
         car.x += carVelocityX;
+        if (velocityY < 5) velocityY += 8.5;
     }
 
 }
